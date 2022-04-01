@@ -25,20 +25,20 @@ def get_page(offset):
     # sqlForMat = "INSERT INTO article(cms_id, article_title, article_content, article_source, article_authors,article_time, article_keyword, create_time) VALUES ('%s','%s','%s','%s','%s','%s','%s',%s)"
     # myresult = mycursor.fetchall()
     data=response.json().get('data')
-    if data is not None:
+    if data != None:
         url_list=response.json().get('data').get('list')
-        if url_list is not []:
+        if url_list != []:
                 for item in url_list:
                     total+=1
                     content_url = item.get('url')
-                    if str(content_url).find("omn") >= 0 or str(content_url).find(
-                            "rain") >= 0:
-                        res = contentHandle.resolving(content_url)
-                        # print(res[0])
-                        # print(res[1])
-                        print("插入文章：" + res[0]+",url="+content_url)
-                        body = {"title": res[0], "content": res[1] ,"source":content_url}
-                        put_res=esConnect.put_elasticsearch("tencent", "article", item.get('cms_id'), body)
+                    tag_list=item.get('tags')
+                    for tag in tag_list:
+                        esConnect.put_elasticsearch("tencent_tag","tag",tag.get("tag_id"),tag)
+                    if str(content_url).find("omn") >= 0 or str(content_url).find("rain") >= 0:
+                        title=item.get("title")
+                        print("插入文章：" + title+",url="+content_url)
+                        body = {"title": title, "content": contentHandle.resolving(content_url) ,"source":content_url,"tags":tag_list}
+                        put_res=esConnect.put_elasticsearch("tencent_article", "article", item.get('cms_id'), body)
                         if put_res.get('_shards').get('successful') == 1:
                             success+=1
     return [total,success]
